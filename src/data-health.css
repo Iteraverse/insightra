@@ -1,0 +1,1081 @@
+.data-manager {
+  padding: 24px var(--padding) 30px;
+}
+.dataset-layout {
+  display: grid;
+  grid-template-columns: 218px minmax(0, 1fr);
+  min-height: 720px;
+}
+.dataset-sidebar {
+  padding: 25px 17px 0 0;
+  border-right: 1px solid var(--border);
+}
+.dataset-sidebar > button {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  padding: 13px 9px;
+  text-align: left;
+  margin-bottom: 6px;
+}
+.dataset-sidebar > button.dataset-active {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
+}
+.dataset-file-icon {
+  color: var(--accent);
+  margin-top: 3px;
+}
+.dataset-sidebar strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.dataset-sidebar small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.dataset-sidebar .rail-note {
+  margin-top: 28px;
+}
+.dataset-editor {
+  padding: 24px 0 0 25px;
+  min-width: 0;
+}
+.dataset-title {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 21px;
+}
+.dataset-title h2 {
+  font-size: 17px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.dataset-title p {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.dataset-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.dataset-actions {
+  display: flex;
+  gap: 8px;
+}
+.data-editing-area {
+  min-height: 430px;
+}
+.table-editor-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 0;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--muted);
+}
+.table-editor-controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.table-editor-controls > span {
+  margin-right: auto;
+}
+.table-editor-controls .text-button {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.table-editor-controls form {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.table-editor-controls form > input {
+  width: 90px;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  padding: 7px;
+}
+.editable-table-scroll {
+  overflow: auto;
+  max-height: 550px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+}
+.editable-data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 100%;
+  font-size: 12px;
+}
+.editable-data-table th {
+  background: var(--soft);
+  text-align: left;
+  padding: 10px;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.editable-data-table td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0;
+}
+.editable-data-table td:first-child {
+  min-width: 35px;
+  padding: 0 8px;
+  font-size: 10px;
+  color: var(--faint);
+  background: var(--soft);
+}
+.editable-data-table td > input {
+  width: 170px;
+  min-width: 100%;
+  padding: 11px 10px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+}
+.editable-data-table input.nested-cell {
+  font-family: Consolas, monospace;
+  color: var(--accent);
+}
+.editable-data-table input:focus {
+  background: var(--accent-soft);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+.dataset-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 15px 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+.dataset-pagination > span {
+  margin-right: auto;
+}
+.dataset-pagination .button {
+  height: 29px;
+  font-size: 10px;
+}
+.dataset-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.dataset-footer > span {
+  font-size: 10px;
+  color: var(--muted);
+  max-width: 440px;
+  line-height: 1.9;
+}
+.dataset-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.json-tree-editor {
+  padding: 20px 0;
+  overflow: auto;
+  max-height: 650px;
+}
+.json-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 35px;
+  font-size: 12px;
+  min-width: 380px;
+}
+.json-key {
+  min-width: 85px;
+  font-family: Consolas, monospace;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.json-tree-row > select {
+  font-size: 10px;
+  padding: 4px 16px 4px 6px;
+  max-width: 85px;
+  border-color: transparent;
+  color: var(--muted);
+  background: var(--soft);
+}
+.tree-count,
+.null-value {
+  color: var(--muted);
+  font-size: 10px;
+}
+.tree-leaf-indent {
+  width: 29px;
+}
+.tree-value-input {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 4px;
+  min-width: 150px;
+  width: 100%;
+  max-width: 420px;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: 11px;
+}
+.json-children {
+  padding-left: 22px;
+  border-left: 1px solid var(--border);
+  margin-left: 13px;
+}
+.tree-add {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+.tree-add input {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 7px;
+  border-radius: 5px;
+}
+.cell-error {
+  font-size: 11px;
+  color: var(--chart-red);
+}
+.json-source-editor {
+  display: block;
+  width: 100%;
+  min-height: 490px;
+  resize: vertical;
+  font:
+    12px/1.8 Consolas,
+    monospace;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 18px;
+  margin: 18px 0 12px;
+  border-radius: 5px;
+  tab-size: 2;
+}
+.industry-source-strip {
+  display: flex;
+  gap: 17px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 17px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.industry-source-strip b {
+  font-weight: 500;
+  color: var(--ink);
+  margin-right: 4px;
+}
+.industry-source-strip .text-button {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.industry-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+}
+.industry-layout {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 225px;
+  min-height: 570px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 7px 7px;
+  overflow: hidden;
+}
+.industry-company-list {
+  padding: 15px 10px;
+  border-right: 1px solid var(--border);
+  max-height: 800px;
+  overflow: auto;
+}
+.industry-company-list > label {
+  font-size: 10px;
+  color: var(--muted);
+}
+.industry-company-list select {
+  width: 100%;
+  font-size: 11px;
+  margin: 7px 0 15px;
+  padding: 6px;
+}
+.company-list-heading {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 0 6px 9px;
+}
+.industry-company-list > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  padding: 9px 6px;
+  text-align: left;
+  font-size: 11px;
+}
+.industry-company-list > button > i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.industry-company-list > button small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.industry-company-list > button b {
+  margin-left: auto;
+  color: var(--muted);
+}
+.industry-company-list > button.company-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.company-list-pages {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+.company-list-pages .text-button {
+  font-size: 10px;
+}
+.industry-canvas {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.industry-canvas .chart-caption {
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.industry-canvas .chart-caption > .muted {
+  font-size: 9px;
+}
+.industry-svg-scroll {
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.industry-svg-scroll > svg {
+  display: block;
+  width: 100%;
+  min-width: 730px;
+  max-height: 590px;
+}
+.segment-count {
+  fill: var(--ink);
+  font-size: 17px;
+  font-weight: 500;
+}
+.segment-name {
+  fill: var(--ink);
+  font-size: 12px;
+}
+.industry-svg-scroll g[role='button'] {
+  cursor: pointer;
+}
+.industry-canvas .dataset-pagination {
+  padding: 15px;
+}
+.industry-inspector {
+  border-left: 1px solid var(--border);
+  padding: 22px 18px;
+}
+.industry-inspector h2 {
+  font-size: 21px;
+  font-weight: 500;
+  margin: 13px 0 14px;
+}
+.industry-inspector p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+  margin-top: 15px;
+}
+.industry-inspector h3 {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 25px 0 10px;
+}
+.industry-inspector ul {
+  padding-left: 17px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.industry-inspector .status-pill {
+  white-space: normal;
+}
+.industry-edges-scroll {
+  overflow: auto;
+  max-height: 650px;
+}
+.industry-edges-scroll .data-table {
+  font-size: 11px;
+}
+.industry-edges-scroll .text-button {
+  font-size: 11px;
+  padding: 2px;
+}
+.industry-sources {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 18px;
+}
+.industry-sources summary {
+  cursor: pointer;
+}
+.industry-sources > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+.industry-sources a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0;
+  font-size: 10px;
+}
+.health-journal {
+  padding: 36px var(--padding) 28px;
+}
+.health-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 30px;
+  margin-bottom: 35px;
+}
+.health-heading h1 {
+  font-size: 36px;
+  line-height: 1.5;
+  letter-spacing: -1.2px;
+  font-weight: 450;
+  margin-top: 16px;
+}
+.health-heading h1 > span {
+  color: var(--chart-green);
+}
+.health-heading-aside {
+  min-width: 230px;
+  padding-bottom: 3px;
+}
+.health-heading-aside p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted);
+  margin: 13px 0;
+}
+.health-heading-aside .text-button {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.health-main-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(240px, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.health-long-view {
+  padding: 24px 35px 25px 0;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.health-section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+.health-metric-tabs {
+  display: flex;
+  gap: 22px;
+  margin: 27px 0 20px;
+}
+.health-metric-tabs button {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.health-metric-tabs .health-metric-selected {
+  color: var(--ink);
+  border-color: var(--chart-green);
+}
+.health-value-story {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 15px;
+}
+.health-value-story > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.health-value-story strong {
+  font-size: 56px;
+  font-weight: 400;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+.health-value-story > div > span {
+  font-size: 14px;
+  color: var(--muted);
+}
+.health-value-story small {
+  display: block;
+  font-size: 10px;
+  margin-top: 6px;
+}
+.health-value-story p {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  gap: 7px;
+}
+.health-value-story p > b {
+  font-size: 17px;
+  font-weight: 450;
+}
+.health-value-story p > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.health-long-view .series-readout {
+  display: none;
+}
+.health-chart-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 22px;
+}
+.health-rhythm {
+  padding: 24px 0 25px 32px;
+}
+.health-rhythm h2 {
+  font-size: 23px;
+  line-height: 1.65;
+  font-weight: 450;
+  margin-top: 26px;
+}
+.sleep-clock {
+  max-width: 230px;
+  margin: 14px auto;
+}
+.sleep-clock svg {
+  display: block;
+  width: 100%;
+}
+.sleep-value {
+  font-size: 34px;
+  font-weight: 400;
+  fill: var(--ink);
+}
+.sleep-unit {
+  font-size: 15px;
+  fill: var(--muted);
+}
+.sleep-caption {
+  font-size: 10px;
+  fill: var(--muted);
+}
+.rhythm-reading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.rhythm-reading strong {
+  font-size: 22px;
+  font-weight: 450;
+  color: var(--ink);
+}
+.rhythm-reading small {
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: 5px;
+}
+.rhythm-note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+  margin-top: 15px;
+}
+.health-observation-strip {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 190px;
+  gap: 30px;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+.health-strip-intro h2 {
+  font-size: 19px;
+  font-weight: 450;
+  margin: 15px 0 9px;
+}
+.health-strip-intro p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.health-day-grid {
+  display: grid;
+  grid-template-columns: repeat(15, minmax(12px, 1fr));
+  gap: 8px 6px;
+  max-height: 265px;
+  overflow: auto;
+}
+.health-day-grid > button {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 65px;
+  gap: 8px;
+  padding: 5px 2px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.health-day-grid i {
+  display: block;
+  width: 7px;
+  background: var(--chart-green);
+  opacity: 0.35;
+  border-radius: 4px;
+}
+.health-day-grid span {
+  font-size: 9px;
+  color: var(--muted);
+}
+.health-day-grid .day-selected {
+  border-color: var(--chart-green);
+  background: color-mix(in srgb, var(--chart-green) 7%, transparent);
+}
+.health-day-grid .day-selected i {
+  opacity: 1;
+}
+.health-day-detail {
+  border-left: 1px solid var(--border);
+  padding-left: 22px;
+}
+.health-day-detail > span {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 15px;
+}
+.health-day-detail > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 0;
+  font-size: 11px;
+}
+.health-day-detail b {
+  font-weight: 500;
+}
+.health-day-detail > div > span {
+  color: var(--muted);
+}
+.health-source-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 10px;
+  color: var(--muted);
+  padding-top: 23px;
+}
+.health-real-empty {
+  padding: 90px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+.health-real-empty > svg {
+  color: var(--chart-green);
+}
+.health-real-empty h2 {
+  font-size: 23px;
+  font-weight: 450;
+}
+.health-real-empty p {
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (max-width: 1500px) {
+  .industry-layout {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+  .industry-inspector {
+    grid-column: 1/-1;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 25px;
+  }
+  .industry-inspector h2 {
+    grid-column: 1/-1;
+    margin: 0;
+  }
+  .industry-company-heading {
+    grid-column: 1 / -1;
+  }
+  .industry-company-heading h2 {
+    margin: 10px 0;
+  }
+  .industry-company-links .button {
+    margin-top: 12px;
+  }
+  .industry-inspector p {
+    margin: 0;
+  }
+  .industry-inspector h3 {
+    margin: 12px 0;
+  }
+  .industry-inspector .detail-stat {
+    margin: 0;
+  }
+  .industry-inspector .button {
+    max-width: 200px;
+  }
+  .industry-company-list {
+    max-height: 660px;
+  }
+  .industry-svg-scroll > svg {
+    min-width: 680px;
+  }
+  .health-observation-strip {
+    grid-template-columns: 180px minmax(0, 1fr) 165px;
+    gap: 22px;
+  }
+}
+@media (max-width: 1050px) {
+  .dataset-layout {
+    grid-template-columns: 175px minmax(0, 1fr);
+  }
+  .dataset-editor {
+    padding-left: 18px;
+  }
+  .dataset-title {
+    flex-wrap: wrap;
+  }
+  .dataset-actions {
+    margin-left: auto;
+  }
+  .health-heading h1 {
+    font-size: 30px;
+  }
+  .health-main-layout {
+    grid-template-columns: 1fr;
+  }
+  .health-long-view {
+    padding-right: 0;
+    border-right: 0;
+  }
+  .health-rhythm {
+    border-top: 1px solid var(--border);
+    padding-left: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 25px;
+  }
+  .health-rhythm .health-section-label {
+    grid-column: 1/-1;
+  }
+  .health-rhythm h2 {
+    margin: 10px 0;
+  }
+  .sleep-clock {
+    grid-column: 2;
+    grid-row: 2/5;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 220px;
+  }
+  .health-observation-strip {
+    grid-template-columns: 1fr 165px;
+  }
+  .health-strip-intro {
+    grid-column: 1/-1;
+  }
+  .health-strip-intro h2 {
+    margin: 7px 0;
+  }
+  .health-heading-aside {
+    min-width: 190px;
+  }
+  .industry-toolbar {
+    flex-wrap: wrap;
+  }
+  .industry-source-strip {
+    gap: 12px;
+  }
+}
+@media (max-width: 700px) {
+  .data-manager {
+    padding: 18px 16px;
+  }
+  .dataset-layout {
+    display: block;
+  }
+  .dataset-sidebar {
+    padding: 15px 0;
+    display: flex;
+    overflow: auto;
+    gap: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .dataset-sidebar > .rail-label,
+  .dataset-sidebar > .rail-note {
+    display: none;
+  }
+  .dataset-sidebar > button {
+    width: 220px;
+    min-width: 200px;
+    margin: 0;
+  }
+  .dataset-editor {
+    padding: 20px 0;
+  }
+  .dataset-title h2 {
+    font-size: 16px;
+  }
+  .dataset-title p {
+    font-size: 10px;
+  }
+  .dataset-toolbar .view-tabs {
+    width: auto;
+  }
+  .table-editor-controls {
+    gap: 10px;
+  }
+  .table-editor-controls select {
+    font-size: 13px;
+  }
+  .dataset-actions .button {
+    font-size: 11px;
+    padding: 0 9px;
+  }
+  .dataset-footer > div {
+    width: 100%;
+  }
+  .json-tree-row {
+    min-width: 400px;
+  }
+  .industry-layout {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+  .industry-source-strip {
+    font-size: 10px;
+    gap: 8px;
+  }
+  .industry-source-strip .text-button {
+    margin-left: 0;
+  }
+  .industry-company-list {
+    padding: 12px 6px;
+    max-height: 580px;
+  }
+  .industry-inspector {
+    display: block;
+  }
+  .industry-inspector p {
+    margin-top: 12px;
+  }
+  .industry-inspector h2 {
+    margin: 10px 0;
+  }
+  .industry-inspector .detail-stat {
+    margin: 15px 0;
+  }
+  .industry-canvas .chart-caption {
+    padding: 13px 10px;
+  }
+  .industry-canvas .chart-caption > .muted {
+    display: none;
+  }
+  .industry-canvas .dataset-pagination {
+    flex-wrap: wrap;
+  }
+  .industry-sources > div {
+    grid-template-columns: 1fr;
+  }
+  .industry-svg-scroll > svg {
+    min-width: 800px;
+  }
+  .health-journal {
+    padding: 25px 16px;
+  }
+  .health-heading {
+    display: block;
+    margin-bottom: 23px;
+  }
+  .health-heading h1 {
+    font-size: 29px;
+  }
+  .health-heading-aside {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .health-heading-aside p {
+    display: none;
+  }
+  .health-heading-aside .text-button {
+    font-size: 10px;
+  }
+  .health-value-story strong {
+    font-size: 45px;
+  }
+  .health-value-story {
+    gap: 10px;
+  }
+  .health-value-story small {
+    font-size: 9px;
+  }
+  .health-value-story p > span {
+    font-size: 9px;
+    max-width: 110px;
+  }
+  .health-value-story p > b {
+    font-size: 14px;
+  }
+  .health-value-story > div {
+    gap: 8px;
+  }
+  .health-rhythm {
+    gap: 12px 14px;
+  }
+  .health-rhythm h2 {
+    font-size: 20px;
+  }
+  .sleep-clock {
+    max-width: 160px;
+    align-self: center;
+  }
+  .rhythm-note {
+    font-size: 10px;
+  }
+  .health-observation-strip {
+    gap: 20px;
+    grid-template-columns: 1fr;
+  }
+  .health-day-grid {
+    grid-template-columns: repeat(15, minmax(12px, 1fr));
+  }
+  .health-day-detail {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    padding: 15px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .health-day-detail > span {
+    margin: 0;
+  }
+  .health-day-detail > div {
+    gap: 5px;
+    font-size: 10px;
+  }
+  .health-source-footer {
+    flex-direction: column;
+    gap: 9px;
+  }
+  .health-chart-note {
+    font-size: 9px;
+  }
+}
