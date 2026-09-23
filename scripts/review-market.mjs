@@ -12,7 +12,8 @@ try {
   console.log(JSON.stringify({ widgets: await page.locator('.market-widget').count(), errors }));
   await page.getByRole('button', { name: 'A 股大盘云图设置', exact: true }).click();
   await page.screenshot({ path: 'artifacts/widget-settings.png' });
-  await page.getByLabel('A 股大盘云图尺寸').selectOption('full');
+  await page.getByRole('button', { name: '通用设置', exact: true }).click();
+  await page.getByRole('radio', { name: '特大 · 独占一行', exact: true }).check();
   await page.getByRole('button', { name: '完成', exact: true }).click();
   await page.waitForTimeout(350);
   await page.screenshot({ path: 'artifacts/market-full-width.png', fullPage: true });

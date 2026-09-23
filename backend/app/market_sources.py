@@ -11,8 +11,8 @@ from .datasets import timestamp, validate_json
 
 router=APIRouter(prefix='/api/market-sources')
 SOURCES=[
-    {'id':'tushare-ashare','name':'Tushare · A 股全市场快照','dataset_id':'market-ashare','schema':'ashare.snapshot.v1','description':'沪深北上市股票日线 + 公司行业 + 总市值，按最近完整交易日合并。','apis':['trade_cal','stock_basic','daily','daily_basic'],'fields':['ts_code','name','industry','trade_date','close','pct_chg','amount','total_mv'],'frequency':'收盘日线','units':{'amount':'元','total_mv':'元','pct_chg':'%'}},
-    {'id':'tushare-indices','name':'Tushare · 核心指数日线','dataset_id':'market-indices','schema':'index.daily.v1','description':'上证指数、深证成指、创业板指、沪深300，最近 90 天历史日线。','apis':['index_daily'],'fields':['ts_code','name','trade_date','close','pct_chg','amount'],'frequency':'收盘日线','units':{'close':'点','pct_chg':'%','amount':'元'}},
+    {'id':'tushare-ashare','name':'Tushare · A 股全市场快照','dataset_id':'market-ashare','schema':'ashare.snapshot.v1','description':'沪深北上市股票日线 + 公司行业 + 总市值，按最近完整交易日合并。','apis':['trade_cal','stock_basic','daily','daily_basic'],'fields':['ts_code','name','industry','trade_date','open','high','low','close','pre_close','pct_chg','amount','vol','total_mv','history'],'frequency':'收盘日线','units':{'vol':'手','history':'未复权日线','amount':'元','total_mv':'元','pct_chg':'%'}},
+    {'id':'tushare-indices','name':'Tushare · 核心指数日线','dataset_id':'market-indices','schema':'index.daily.v1','description':'上证指数、深证成指、创业板指、沪深300，最近 90 天历史日线。','apis':['index_daily'],'fields':['ts_code','name','trade_date','open','high','low','close','pre_close','pct_chg','amount','vol'],'frequency':'收盘日线','units':{'vol':'手','close':'点','pct_chg':'%','amount':'元'}},
 ]
 RUNNING:set[str]=set()
 
@@ -54,7 +54,7 @@ def build_ashare(basic,daily,capital):
         if not finite(item.get('pct_chg')) or not finite(item.get('close')):continue
         info=names.get(item['ts_code'],{});cap=caps.get(item['ts_code'],{}).get('total_mv')
         amount=item.get('amount')
-        rows.append({'ts_code':item['ts_code'],'name':info.get('name') or item['ts_code'],'industry':info.get('industry') or '未分类','market':info.get('market') or '未分类','trade_date':item['trade_date'],'close':item['close'],'pct_chg':item['pct_chg'],'amount':round(amount*1000,2) if finite(amount) else None,'total_mv':round(cap*10000,2) if finite(cap) else None})
+        rows.append({'ts_code':item['ts_code'],'name':info.get('name') or item['ts_code'],'industry':info.get('industry') or '未分类','market':info.get('market') or '未分类','trade_date':item['trade_date'],**{key:item.get(key) if finite(item.get(key)) else None for key in ('open','high','low','pre_close','vol')},'close':item['close'],'pct_chg':item['pct_chg'],'amount':round(amount*1000,2) if finite(amount) else None,'total_mv':round(cap*10000,2) if finite(cap) else None})
     rows.sort(key=lambda r:r['ts_code'])
     return rows,{'listed':len(names),'returned_daily':len(daily),'usable':len(rows),'missing_daily':len(set(names)-{r['ts_code'] for r in daily}),'classified':sum(r['industry']!='未分类' for r in rows),'capital_available':sum(finite(r['total_mv']) and r['total_mv']>0 for r in rows)}
 
@@ -80,7 +80,7 @@ async def sync_source(source_id):
             daily=[];as_of=''
             for target in dates[:5]:
                 status_write(source_id,'running',message=f'读取 {target} 全市场日线…',progress=25)
-                daily=await fetch_pages('daily',{'trade_date':target},'ts_code,trade_date,close,pct_chg,amount')
+                daily=await fetch_pages('daily',{'trade_date':target},'ts_code,trade_date,open,high,low,close,pre_close,pct_chg,amount,vol')
                 if daily:as_of=target;break
             if not daily:raise ValueError('最近交易日没有可用日线。')
             status_write(source_id,'running',message='读取公司名称和行业分类…',progress=55)
@@ -91,13 +91,30 @@ async def sync_source(source_id):
             except ValueError as exc:capital=[];warnings.append('市值数据不可用，云图可使用成交额面积。'+str(exc))
             if any(r.get('trade_date')!=as_of for r in daily+capital):raise ValueError('返回数据日期不一致，已停止发布。')
             rows,coverage=build_ashare(basic,daily,capital)
+            with closing(connect()) as db:
+                board_row=db.execute("SELECT value FROM app_metadata WHERE key='board:finance'").fetchone()
+            board=json.loads(board_row['value']) if board_row else {'groups':[]}
+            watched=sorted({code for group in board['groups'] for w in group['widgets'] if w['kind']=='watchlist' and w.get('sources',{}).get('market')==source['dataset_id'] for code in w.get('options',{}).get('symbols',[])})
+            if len(watched)>100:warnings.append('自选股历史本次最多同步 100 只，超出部分未采集。')
+            by_code={r['ts_code']:r for r in rows};history_count=0
+            for code in watched[:100]:
+                if code not in by_code:continue
+                status_write(source_id,'running',message=f'补充自选股 {code} 历史日线…',progress=85)
+                try:
+                    series=await fetch_pages('daily',{'ts_code':code,'start_date':(datetime.strptime(as_of,'%Y%m%d').date()-timedelta(days=180)).strftime('%Y%m%d'),'end_date':as_of},'ts_code,trade_date,close,vol')
+                    valid=sorted([r for r in series if r.get('ts_code')==code and r.get('trade_date','')<=as_of and finite(r.get('close'))],key=lambda r:r['trade_date'])[-60:]
+                    by_code[code]['history']=[{'trade_date':r['trade_date'],'close':r['close'],'vol':r.get('vol') if finite(r.get('vol')) else None} for r in valid]
+                    history_count+=bool(valid)
+                except ValueError as exc:warnings.append(f'{code} 历史未取得：{exc}')
+            coverage['history_available']=history_count
+            if watched:warnings.append('自选股历史为未复权收盘走势，除权除息可能造成跳变；最多保留 60 个有行情交易日。')
             if coverage['missing_daily']:warnings.append(f"{coverage['missing_daily']} 家当前上市公司未返回该日日线，可能停牌或尚无行情；未计入市场统计。")
             warnings.append('行业来自当前 stock_basic 分类；细分行业涨跌按有行情股票等权聚合，不是官方行业指数。')
         else:
             rows=[];coverage={'indices':0};latest=[]
             for i,(code,name) in enumerate([('000001.SH','上证指数'),('399001.SZ','深证成指'),('399006.SZ','创业板指'),('000300.SH','沪深300')]):
                 status_write(source_id,'running',message=f'读取{name}日线…',progress=15+i*20)
-                series=require_result(await query_tushare('index_daily',{'ts_code':code,'start_date':(today-timedelta(days=90)).strftime('%Y%m%d'),'end_date':(today if now.hour>=18 else today-timedelta(days=1)).strftime('%Y%m%d')},'ts_code,trade_date,close,pct_chg,amount'))
+                series=require_result(await query_tushare('index_daily',{'ts_code':code,'start_date':(today-timedelta(days=90)).strftime('%Y%m%d'),'end_date':(today if now.hour>=18 else today-timedelta(days=1)).strftime('%Y%m%d')},'ts_code,trade_date,open,high,low,close,pre_close,pct_chg,amount,vol'))
                 usable=[r for r in series if finite(r.get('close')) and finite(r.get('pct_chg'))]
                 if not usable:raise ValueError(f'{name}没有可用日线；保留上次完整指数数据。')
                 latest.append(max(r['trade_date'] for r in usable));coverage['indices']+=1

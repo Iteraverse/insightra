@@ -22,12 +22,13 @@ class MarketBoardTest(unittest.TestCase):
         return {'id':id,'kind':kind,'sources':{'indices' if kind=='index-board' else 'market':dataset},'size':'wide','refresh_seconds':300,'options':{'area':'total_mv'}}
 
     def test_refresh_interval_and_full_size_persist(self):
-        widget=self.widget();widget.update(size='full',refresh_seconds=15)
+        widget=self.widget();widget.update(size='full',refresh_seconds=15);widget['options']['height_units']=4
         group={'id':'g-refresh','title':'刷新设置','widgets':[widget]}
         response=self.client.put('/api/boards/finance',json={'revision':0,'groups':[group]})
         self.assertEqual(response.status_code,200)
         self.assertEqual(self.client.get('/api/boards/finance').json()['groups'][0]['widgets'][0]['refresh_seconds'],15)
         self.assertEqual(response.json()['groups'][0]['widgets'][0]['size'],'full')
+        self.assertEqual(response.json()['groups'][0]['widgets'][0]['options']['height_units'],4)
         group['widgets'][0]['refresh_seconds']=1
         self.assertEqual(self.client.put('/api/boards/finance',json={'revision':1,'groups':[group]}).status_code,422)
     def test_dependency_schema_and_group_persistence(self):
@@ -76,3 +77,33 @@ class MarketBoardTest(unittest.TestCase):
         with patch.object(market_sources,'query_tushare',side_effect=query):response=self.client.post('/api/market-sources/tushare-ashare/sync')
         self.assertEqual(response.status_code,202)
         saved=self.client.get('/api/datasets/market-ashare').json();self.assertEqual(saved['revision'],2);self.assertTrue(saved['read_only']);self.assertEqual(saved['data'][0]['total_mv'],40000)
+    def test_watchlist_options_and_contract(self):
+        widget=self.widget(kind='watchlist')
+        widget['options']['symbols']=['000001.SZ','600000.SH']
+        group={'id':'watch-group','title':'自选','widgets':[widget]}
+        response=self.client.put('/api/boards/finance',json={'revision':0,'groups':[group]})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['groups'][0]['widgets'][0]['options']['symbols'],widget['options']['symbols'])
+        self.assertEqual(self.client.post('/api/widget-groups',json=group).status_code,201)
+        widget['options']['symbols']=['000001.SZ']*101
+        self.assertEqual(self.client.put('/api/boards/finance',json={'revision':1,'groups':[group]}).status_code,422)
+    def test_watchlist_history_and_ohlcv_sync(self):
+        widget=self.widget(kind='watchlist');widget['options'].update(symbols=['000001.SZ'],trend_days=10)
+        response=self.client.put('/api/boards/finance',json={'revision':0,'groups':[{'id':'history','title':'历史','widgets':[widget]}]})
+        self.assertEqual(response.status_code,200)
+        async def query(name,params,fields):
+            if name=='trade_cal':rows=[{'cal_date':'20260922'}]
+            elif name=='stock_basic':rows=[{'ts_code':'000001.SZ','name':'样本','industry':'银行'}]
+            elif name=='daily_basic':rows=[{'ts_code':'000001.SZ','trade_date':'20260922','total_mv':1}]
+            elif params.get('ts_code'):rows=[{'ts_code':'000001.SZ','trade_date':'20260921','close':9,'vol':50},{'ts_code':'000001.SZ','trade_date':'20260922','close':10,'vol':100}]
+            else:rows=[{'ts_code':'000001.SZ','trade_date':'20260922','open':9,'high':11,'low':8,'close':10,'pre_close':9,'pct_chg':11.11,'vol':100,'amount':20}]
+            return {'ok':True,'rows':rows}
+        with patch.object(market_sources,'query_tushare',side_effect=query):self.client.post('/api/market-sources/tushare-ashare/sync')
+        data=self.client.get('/api/datasets/market-ashare').json()
+        row=data['data'][0]
+        self.assertEqual((row['open'],row['high'],row['low'],row['vol'],row['amount']),(9,11,8,100,20000))
+        self.assertEqual([p['close'] for p in row['history']],[9,10])
+        self.assertEqual(data['units']['vol'],'手')
+        self.assertEqual(data['coverage']['history_available'],1)
+        widget['options']['trend_days']=999
+        self.assertEqual(self.client.put('/api/boards/finance',json={'revision':1,'groups':[{'id':'history','title':'历史','widgets':[widget]}]}).status_code,422)

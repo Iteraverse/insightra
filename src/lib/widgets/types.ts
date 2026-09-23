@@ -1,4 +1,11 @@
+export type PricePoint = { trade_date: string; close: number; vol?: number | null };
 export type MarketRow = {
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  pre_close?: number | null;
+  vol?: number | null;
+  history?: PricePoint[];
   ts_code: string;
   name: string;
   industry: string;
@@ -9,6 +16,11 @@ export type MarketRow = {
   total_mv?: number | null;
 };
 export type IndexRow = {
+  open?: number | null;
+  high?: number | null;
+  low?: number | null;
+  pre_close?: number | null;
+  vol?: number | null;
   ts_code: string;
   name: string;
   trade_date: string;
@@ -29,14 +41,25 @@ export type BoundDataset = {
   warnings?: string[];
   read_only?: boolean;
 };
-export type WidgetKind = 'market-map' | 'market-breadth' | 'industry-board' | 'index-board';
+export type WidgetKind =
+  | 'market-map'
+  | 'market-breadth'
+  | 'industry-board'
+  | 'index-board'
+  | 'watchlist'
+  | 'market-movers';
 export type WidgetInstance = {
   id: string;
   kind: WidgetKind;
   sources: Record<string, string>;
   size: 'full' | 'wide' | 'half' | 'small';
   refresh_seconds?: number;
-  options: { area: 'total_mv' | 'amount' };
+  options: {
+    area: 'total_mv' | 'amount';
+    symbols?: string[];
+    height_units?: 2 | 3 | 4;
+    trend_days?: 5 | 10 | 20 | 60;
+  };
 };
 export type WidgetGroup = { id: string; title: string; widgets: WidgetInstance[] };
 export type Board = { revision: number; groups: WidgetGroup[]; updated_at?: string };
@@ -107,3 +130,6 @@ export const cloneGroup = (group: WidgetGroup): WidgetGroup => ({
   id: crypto.randomUUID(),
   widgets: group.widgets.map((w) => ({ ...structuredClone(w), id: crypto.randomUUID() })),
 });
+
+export const widgetHeight = (widget: WidgetInstance) =>
+  180 * (widget.options.height_units ?? (widget.kind === 'market-map' ? 3 : 2));

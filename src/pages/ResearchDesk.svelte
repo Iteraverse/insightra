@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CorrelationView from './CorrelationView.svelte';
   import { onMount, type Snippet } from 'svelte';
   import {
     Folder,
@@ -130,6 +131,12 @@
         onclick={() => (section = 'industry')}
         ><Network size={15} /><span>产业网络</span><ArrowUpRight size={13} /></button
       >
+      <button
+        class:rail-active={section === 'correlation'}
+        aria-label="区间相关度分析"
+        onclick={() => (section = 'correlation')}
+        ><FlaskConical size={15} /><span>区间相关度分析</span><ArrowUpRight size={13} /></button
+      >
       <div class="rail-note">
         <span>研究从一个问题开始</span>
         <p>数据、假设与运行结果，围绕项目归档。</p>
@@ -147,6 +154,7 @@
           >
         </div>
         {@render children()}
+      {:else if section === 'correlation'}<CorrelationView />
       {:else if section === 'projects'}<div class="desk-section-heading">
           <div>
             <h2>研究项目 <span>{projects.length}</span></h2>

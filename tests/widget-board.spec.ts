@@ -112,6 +112,7 @@ test('source-bound widgets can be grouped, moved, saved as templates and restore
   const group1 = page.locator(`[data-group="${first}"]`);
   await group1.getByRole('button', { name: 'A 股大盘云图设置', exact: true }).click();
   await page.getByLabel('云图面积指标').selectOption('amount');
+  await page.getByRole('button', { name: '通用设置', exact: true }).click();
   await page.getByLabel('A 股大盘云图移动到编组').selectOption(second);
   await expect(group2.locator('.market-widget')).toHaveCount(2);
   await group1.getByRole('button', { name: '删除编组 市场观察' }).click();
@@ -206,4 +207,267 @@ test('industry loading reserves its canvas and fades into a complete topology', 
   await expect(page.locator('.atlas-company')).toHaveCount(258);
   const after = (await page.locator('.supply-workbench').boundingBox())!;
   expect(Math.abs(after.height - before.height)).toBeLessThan(4);
+});
+
+test('cold skeleton stays inside dashboard and warm reentry shows cached data while requests wait', async ({
+  page,
+  request,
+}) => {
+  const board: Board = {
+    revision: 1,
+    groups: [
+      {
+        id: 'cache-group',
+        title: '缓存测试',
+        widgets: [
+          {
+            id: 'cache-widget',
+            kind: 'market-map',
+            sources: { market: market.id },
+            size: 'wide',
+            options: { area: 'total_mv' },
+          },
+        ],
+      },
+    ],
+  };
+  await harness(page, request, board);
+  let release!: () => void;
+  let gate = new Promise<void>((r) => (release = r));
+  await page.route('**/api/boards/finance', async (route) => {
+    await gate;
+    await route.fulfill({ json: board });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  await expect(page.locator('.dashboard-skeleton')).toBeVisible();
+  const main = (await page.locator('.market-dashboard').boundingBox())!;
+  for (const box of await page.locator('.dashboard-skeleton > .loading-surface').all()) {
+    const rect = (await box.boundingBox())!;
+    expect(rect.x).toBeGreaterThanOrEqual(main.x);
+    expect(rect.x + rect.width).toBeLessThanOrEqual(main.x + main.width + 1);
+  }
+  release();
+  await expect(page.locator('.cloud-canvas canvas')).toBeVisible();
+  await expect(page.locator('.widget-refresh-state')).toHaveAttribute(
+    'data-refresh-status',
+    'success',
+  );
+  gate = new Promise<void>((r) => (release = r));
+  await page.route('**/api/datasets/test-market', async (route) => {
+    await gate;
+    await route.fulfill({ status: 503, json: { detail: '离线检查' } });
+  });
+  await page.reload();
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  await expect(page.locator('.cloud-canvas canvas')).toBeVisible();
+  await expect(page.locator('.dashboard-skeleton')).toHaveCount(0);
+  await expect(page.locator('.widget-refresh-state')).toHaveAttribute(
+    'data-refresh-status',
+    'loading',
+  );
+  await page.getByRole('button', { name: '放大A 股大盘云图', exact: true }).click();
+  const viewer = page.getByRole('dialog', { name: 'A 股大盘云图放大浏览' });
+  await expect(viewer.locator('canvas')).toBeVisible();
+  await viewer.getByLabel('云图行业').selectOption('银行');
+  await expect(viewer.locator('canvas')).toHaveAttribute('aria-label', /6家公司/);
+  await page.keyboard.press('Escape');
+  await expect(viewer).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '放大A 股大盘云图', exact: true })).toBeFocused();
+  release();
+  await expect(page.locator('.widget-error-note')).toContainText('离线检查');
+  await expect(page.locator('.cloud-canvas canvas')).toBeVisible();
+});
+
+test('fuzzy widget search adds watchlist and persists chosen stocks; ranking is available', async ({
+  page,
+  request,
+}) => {
+  const h = await harness(page, request);
+  await page.goto('/');
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  await page.getByRole('button', { name: '添加小组件', exact: true }).click();
+  await page.getByLabel('搜索小组件').fill('自股');
+  await expect(page.locator('.widget-kind-list > button')).toHaveCount(1);
+  await page.locator('.widget-kind-list > button').click();
+  await page.getByRole('button', { name: '添加组件', exact: true }).click();
+  await expect(page.getByLabel('搜索股票')).toHaveCount(0);
+  await page.getByRole('button', { name: '自选股观察设置', exact: true }).click();
+  await page.getByLabel('搜索股票').fill('样本1');
+  await page.locator('.stock-results button').first().click();
+  await page.getByLabel('搜索股票').fill('');
+  await expect(page.getByRole('button', { name: '移除自选 样本1', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await expect(page.getByRole('button', { name: '移除自选 样本1', exact: true })).toHaveCount(0);
+  await expect(page.locator('.stock-table-scroll tbody tr')).toHaveCount(1);
+  await page.getByRole('button', { name: '保存看板', exact: true }).click();
+  expect(h.board().groups[0].widgets[0].options.symbols).toEqual(['000000.SZ']);
+  await page.reload();
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  await expect(page.locator('.stock-table-scroll')).toContainText('样本1');
+  await page.getByRole('button', { name: '添加小组件', exact: true }).click();
+  await page.getByLabel('搜索小组件').fill('涨成排');
+  await page.locator('.widget-kind-list > button').click();
+  await page.getByRole('button', { name: '添加组件', exact: true }).click();
+  await page.getByLabel('排行指标').selectOption('down');
+  await expect(page.locator('.widget-market-movers tbody tr').first()).toContainText('样本1');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('full width indices fit their content without a blank lower half', async ({
+  page,
+  request,
+}) => {
+  const board: Board = {
+    revision: 1,
+    groups: [
+      {
+        id: 'ig',
+        title: '指数',
+        widgets: [
+          {
+            id: 'iw',
+            kind: 'index-board',
+            sources: { indices: 'index-test' },
+            size: 'full',
+            options: { area: 'total_mv' },
+          },
+        ],
+      },
+    ],
+  };
+  await harness(page, request, board);
+  const indices: BoundDataset = {
+    ...market,
+    id: 'index-test',
+    schema: 'index.daily.v1',
+    data: Array.from({ length: 4 }, (_, i) => ({
+      ts_code: `00000${i}.SH`,
+      name: `测试指数${i}`,
+      trade_date: '20260922',
+      close: 3000 + i,
+      pct_chg: 1,
+    })),
+  };
+  await page.route('**/api/datasets/index-test', (r) => r.fulfill({ json: indices }));
+  await page.goto('/');
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  await expect(page.locator('.index-tile')).toHaveCount(4);
+  const body = (await page.locator('.widget-index-board .widget-body').boundingBox())!;
+  const grid = (await page.locator('.index-board-widget').boundingBox())!;
+  expect(body.height - grid.height).toBeLessThan(8);
+});
+
+test('watchlist size controls information depth and independent settings panels', async ({
+  page,
+  request,
+}) => {
+  const board: Board = {
+    revision: 1,
+    groups: [
+      {
+        id: 'detail',
+        title: '详细',
+        widgets: [
+          {
+            id: 'detail-stock',
+            kind: 'watchlist',
+            sources: { market: market.id },
+            size: 'small',
+            options: { area: 'total_mv', symbols: ['000000.SZ'], trend_days: 10 },
+          },
+        ],
+      },
+    ],
+  };
+  await harness(page, request, board);
+  const enriched = {
+    ...market,
+    data: market.data.map((row) => ({
+      ...row,
+      open: 9,
+      high: 12,
+      low: 8,
+      vol: 12000,
+      history: Array.from({ length: 10 }, (_, i) => ({
+        trade_date: `202609${String(i + 10).padStart(2, '0')}`,
+        close: 9 + i / 10,
+        vol: 10000 + i * 500,
+      })),
+    })),
+  };
+  await page.route('**/api/datasets/test-market', (r) => r.fulfill({ json: enriched }));
+  await page.goto('/');
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  await expect(page.locator('.stock-table-scroll')).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: '最高', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '自选股观察设置', exact: true }).click();
+  await expect(page.getByLabel('搜索股票')).toBeVisible();
+  await expect(page.getByRole('radio', { name: '大 · 2/3 行', exact: true })).toBeHidden();
+  await page.getByLabel('走势交易日数').selectOption('5');
+  await page.getByRole('button', { name: '通用设置', exact: true }).click();
+  await expect(page.getByLabel('搜索股票')).toBeHidden();
+  await page.getByRole('radio', { name: '大 · 2/3 行', exact: true }).check();
+  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: '最高', exact: true })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: '成交量', exact: true })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: '5 日走势', exact: true })).toBeVisible();
+  await expect(page.locator('.stock-trend-cell svg')).toHaveAttribute('aria-label', /5 个交易日/);
+  await page.getByRole('button', { name: '保存看板', exact: true }).click();
+});
+
+test('cloud hover follows pointer, highlights stock, pins, and dismisses without crosshair', async ({
+  page,
+  request,
+}) => {
+  const board: Board = {
+    revision: 1,
+    groups: [
+      {
+        id: 'hover-group',
+        title: '悬停',
+        widgets: [
+          {
+            id: 'hover-widget',
+            kind: 'market-map',
+            sources: { market: market.id },
+            size: 'full',
+            options: { area: 'total_mv' },
+          },
+        ],
+      },
+    ],
+  };
+  await harness(page, request, board);
+  await page.goto('/');
+  await page.getByRole('button', { name: '金融资产', exact: true }).click();
+  const canvas = page.locator('.cloud-canvas canvas');
+  await expect(canvas).toBeVisible();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.2, box.y + 70);
+  const tooltip = page.getByRole('tooltip');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('收盘');
+  await expect(tooltip).toContainText('成交额');
+  await expect(page.locator('.cloud-hover-outline')).toBeVisible();
+  expect(await canvas.evaluate((e) => getComputedStyle(e).cursor)).toBe('pointer');
+  const before = (await tooltip.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.2 + 18, box.y + 76);
+  const after = (await tooltip.boundingBox())!;
+  expect(after.x).not.toBe(before.x);
+  const viewport = page.viewportSize()!;
+  expect(after.x).toBeGreaterThanOrEqual(0);
+  expect(after.x + after.width).toBeLessThanOrEqual(viewport.width);
+  expect(after.y + after.height).toBeLessThanOrEqual(viewport.height);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.mouse.move(10, 10);
+  await expect(tooltip).toContainText('已固定');
+  await page.keyboard.press('Escape');
+  await expect(tooltip).toHaveCount(0);
+  await page.mouse.move(box.x + 20, box.y + 50);
+  await expect(tooltip).toBeVisible();
+  await page.mouse.move(10, 10);
+  await expect(tooltip).toHaveCount(0);
 });

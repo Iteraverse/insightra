@@ -152,8 +152,10 @@ test('widget settings persist full width and refresh interval with visible succe
   await expect(indicator.locator('time')).toHaveText(/\d{2}:\d{2}:\d{2}/);
   await page.getByRole('button', { name: 'A 股大盘云图设置', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'A 股大盘云图设置' })).toBeVisible();
+  await page.getByRole('button', { name: '通用设置', exact: true }).click();
   await page.getByLabel('A 股大盘云图刷新周期').selectOption('15');
-  await page.getByLabel('A 股大盘云图尺寸').selectOption('full');
+  await page.getByRole('radio', { name: '特大 · 独占一行', exact: true }).check();
+  await page.getByRole('button', { name: '4 格 · 720px', exact: true }).click();
   await page.getByRole('button', { name: '完成', exact: true }).click();
   await expect(page.locator('.widget-placement')).toHaveClass(/size-full/);
   const grid = (await page.locator('.widget-grid').boundingBox())!,
@@ -162,6 +164,8 @@ test('widget settings persist full width and refresh interval with visible succe
   await page.getByRole('button', { name: '保存看板', exact: true }).click();
   expect(board.groups[0].widgets[0].refresh_seconds).toBe(15);
   expect(board.groups[0].widgets[0].size).toBe('full');
+  expect(board.groups[0].widgets[0].options.height_units).toBe(4);
+  expect((await page.locator('.market-widget').boundingBox())!.height).toBe(720);
   await page.getByRole('button', { name: '刷新A 股大盘云图', exact: true }).click();
   await expect(indicator).toHaveAttribute('data-refresh-status', 'loading');
   await expect(indicator).toContainText('刷新中');
@@ -194,6 +198,7 @@ test('widget settings persist full width and refresh interval with visible succe
   await page.reload();
   await page.getByRole('button', { name: '金融资产', exact: true }).click();
   await page.getByRole('button', { name: 'A 股大盘云图设置', exact: true }).click();
+  await page.getByRole('button', { name: '通用设置', exact: true }).click();
   await expect(page.getByLabel('A 股大盘云图刷新周期')).toHaveValue('15');
-  await expect(page.getByLabel('A 股大盘云图尺寸')).toHaveValue('full');
+  await expect(page.getByRole('radio', { name: '特大 · 独占一行', exact: true })).toBeChecked();
 });

@@ -22,14 +22,17 @@ export const rgb = (color: string): [number, number, number] => {
   return values?.length === 3 ? (values as [number, number, number]) : [240, 242, 245];
 };
 export function cloudColor(change: number, palette: CloudPalette) {
-  const base = rgb(palette.neutral),
-    tone = rgb(change >= 0 ? palette.up : palette.down);
-  const power = Math.abs(change) < 0.005 ? 0 : 0.12 + Math.min(Math.abs(change) / 10, 1) * 0.78;
-  const color = base.map((v, i) => Math.round(v + (tone[i] - v) * power));
-  const linear = color.map((v) => {
-    const s = v / 255;
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  });
-  const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-  return { fill: `rgb(${color.join(',')})`, text: luminance > 0.22 ? '#242a34' : '#f6f7f9' };
+  const dark = rgb(palette.neutral).reduce((sum, v) => sum + v, 0) < 300;
+  const neutral = dark ? [43, 49, 59] : rgb(palette.neutral);
+  const target = dark
+    ? change >= 0
+      ? [204, 54, 65]
+      : [37, 164, 84]
+    : change >= 0
+      ? [205, 66, 83]
+      : [39, 143, 100];
+  const strength = Math.min(Math.abs(change) / 4, 1) ** 0.55;
+  const intensity = dark ? strength : Math.abs(change) < 0.005 ? 0 : 0.16 + strength * 0.64;
+  const color = neutral.map((v, i) => Math.round(v + (target[i] - v) * intensity));
+  return { fill: `rgb(${color.join(',')})`, text: dark ? '#f8fafc' : '#202b33' };
 }

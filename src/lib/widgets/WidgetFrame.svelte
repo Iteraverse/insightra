@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    Maximize2,
     GripVertical,
     Trash2,
     ArrowLeft,
@@ -7,21 +8,12 @@
     RefreshCw,
     Settings2,
   } from '@lucide/svelte';
+  import WidgetContent from './WidgetContent.svelte';
+  import WidgetViewer from './WidgetViewer.svelte';
   import WidgetSettings from './WidgetSettings.svelte';
-  import { refreshChoices, type RefreshState } from './types';
+  import { widgetHeight, refreshChoices, type RefreshState } from './types';
   import LoadingSurface from '../LoadingSurface.svelte';
-  import MarketMap from './MarketMap.svelte';
-  import MarketBreadth from './MarketBreadth.svelte';
-  import IndustryBoard from './IndustryBoard.svelte';
-  import IndexBoard from './IndexBoard.svelte';
-  import type {
-    WidgetInstance,
-    WidgetDefinition,
-    BoundDataset,
-    MarketRow,
-    IndexRow,
-    WidgetGroup,
-  } from './types';
+  import type { WidgetInstance, WidgetDefinition, BoundDataset, WidgetGroup } from './types';
   let {
     widget,
     definition,
@@ -57,6 +49,7 @@
     onretry: () => void;
     oninterval: (seconds: number) => void;
   }>();
+  let viewerOpen = $state(false);
   let settingsOpen = $state(false),
     settingsTrigger = $state<HTMLElement | null>(null);
   const refreshStatus = $derived(
@@ -81,16 +74,9 @@
   const cadence = $derived(
     refreshChoices.find((c) => c.value === (widget.refresh_seconds ?? 300))?.label ?? '每 5 分钟',
   );
-  const chartHeight = $derived(
-    widget.size === 'full'
-      ? 450
-      : widget.size === 'wide'
-        ? 340
-        : widget.size === 'half'
-          ? 320
-          : 280,
-  );
-  const bodyHeight = $derived(widget.kind === 'market-map' ? chartHeight + 124 : 330);
+  const cardHeight = $derived(widgetHeight(widget));
+  const bodyHeight = $derived(cardHeight - 92);
+  const chartHeight = $derived(Math.max(160, bodyHeight - 130));
   const dataset: BoundDataset | undefined = $derived(refreshState?.data);
   const invalid = $derived(
     dataset && dataset.schema !== definition.schema
@@ -131,6 +117,15 @@
       </span>
     </div>
     <div class="widget-header-actions">
+      <button
+        class="icon-button"
+        aria-label={`放大${definition.name}`}
+        disabled={!dataset}
+        onclick={(e) => {
+          settingsTrigger = e.currentTarget;
+          viewerOpen = true;
+        }}><Maximize2 size={13} /></button
+      >
       {#if editing}<button
           class="icon-button"
           draggable="true"
@@ -188,15 +183,7 @@
         >
       </div>
     {:else if dataset}<div class="widget-reveal">
-        {#if widget.kind === 'market-map'}<MarketMap
-            rows={dataset.data as MarketRow[]}
-            area={widget.options.area}
-            height={chartHeight}
-          />{:else if widget.kind === 'market-breadth'}<MarketBreadth
-            rows={dataset.data as MarketRow[]}
-          />{:else if widget.kind === 'industry-board'}<IndustryBoard
-            rows={dataset.data as MarketRow[]}
-          />{:else}<IndexBoard rows={dataset.data as IndexRow[]} />{/if}
+        <WidgetContent {widget} {dataset} {onoptions} height={chartHeight} />
       </div>{/if}
     {#if refreshState?.loading && dataset}<div class="widget-refresh-indicator">
         <RefreshCw size={12} class="spinning" />更新中，保留当前视图
@@ -219,6 +206,7 @@
 
 {#if settingsOpen}<WidgetSettings
     {widget}
+    {dataset}
     title={definition.name}
     {groups}
     {groupId}
@@ -229,4 +217,13 @@
     {onrelocate}
     {onoptions}
     {onbind}
+  />{/if}
+
+{#if viewerOpen && dataset}<WidgetViewer
+    {widget}
+    {dataset}
+    title={definition.name}
+    trigger={settingsTrigger}
+    {onoptions}
+    onclose={() => (viewerOpen = false)}
   />{/if}

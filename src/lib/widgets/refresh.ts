@@ -1,4 +1,5 @@
 import type { BoundDataset, RefreshState } from './types';
+import { cached, remember } from './cache';
 export type RefreshConfig = { id: string; sourceId: string; interval: number; kind: string };
 
 /** Independent widget clocks; concurrent requests share a dataset read. */
@@ -36,7 +37,16 @@ export class WidgetRefreshCoordinator {
       if (!old || old.sourceId !== config.sourceId || old.kind !== config.kind) {
         this.tickets.set(config.id, (this.tickets.get(config.id) ?? 0) + 1);
         this.states.delete(config.id);
-        void this.refresh(config.id, false);
+        const saved = cached<{ data: BoundDataset; at: number }>('dataset:' + config.sourceId);
+        if (saved && !this.validate(saved.data, config))
+          this.states.set(config.id, {
+            data: saved.data,
+            completedAt: saved.at,
+            successAt: saved.at,
+            sourceId: config.sourceId,
+            loading: false,
+          });
+        void this.refresh(config.id, !this.cache.has(config.sourceId));
       }
     }
     this.publish();
@@ -80,6 +90,7 @@ export class WidgetRefreshCoordinator {
       if (!this.alive || this.tickets.get(id) !== ticket) return;
       const problem = this.validate(result.data, config);
       if (problem) throw new Error(problem);
+      remember('dataset:' + config.sourceId, result);
       this.states.set(id, {
         sourceId: config.sourceId,
         data: result.data,

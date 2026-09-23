@@ -7,7 +7,7 @@
 </script>
 
 <div
-  class={`loading-surface skeleton-${variant}`}
+  class={`loading-surface loading-variant-${variant}`}
   style={`--skeleton-height:${height}px`}
   role="status"
   aria-label={label}

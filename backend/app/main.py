@@ -13,6 +13,7 @@ from .workspaces import router as workspace_router
 from .datasets import router as datasets_router, seed_industry
 from .market_sources import router as market_sources_router, recover_sources
 from .widget_boards import router as widget_boards_router
+from .correlation import router as correlation_router
 
 ROOT = Path(__file__).resolve().parents[2]
 DATABASE = Path(os.environ.get("INSIGHTRA_DATABASE", str(ROOT / "data" / "insightra.sqlite3")))
@@ -55,6 +56,7 @@ app.include_router(workspace_router)
 app.include_router(datasets_router)
 app.include_router(market_sources_router)
 app.include_router(widget_boards_router)
+app.include_router(correlation_router)
 
 
 @app.middleware("http")

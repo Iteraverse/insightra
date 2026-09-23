@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy, untrack } from 'svelte';
+  import { cached, remember, fuzzyMatch } from '../lib/widgets/cache';
   import { WidgetRefreshCoordinator } from '../lib/widgets/refresh';
-  import { datasetProblem, type RefreshState } from '../lib/widgets/types';
+  import { widgetHeight, datasetProblem, type RefreshState } from '../lib/widgets/types';
   import {
     Plus,
     Settings2,
@@ -39,6 +40,22 @@
     states = $state<Record<string, RefreshState>>({});
   let coordinator = $state.raw<WidgetRefreshCoordinator | null>(null);
   let confirmDiscard = $state(false);
+  let search = $state('');
+  type Preview = { board: Board; definitions: WidgetDefinition[]; templates: GroupTemplate[] };
+  const matchingDefinitions = $derived(
+    definitions.filter(
+      (d) =>
+        (!rebinding || d.kind === chosen) &&
+        fuzzyMatch(d.name + ' ' + d.description + ' ' + d.kind, search),
+    ),
+  );
+  function rememberBoard() {
+    remember('finance', {
+      board: $state.snapshot(board),
+      definitions: $state.snapshot(definitions),
+      templates: $state.snapshot(templates),
+    });
+  }
   let loading = $state(true),
     saving = $state(false),
     editing = $state(false),
@@ -101,12 +118,18 @@
     } catch {}
   }
   async function load() {
-    loading = true;
+    loading = !baseline;
     error = '';
     try {
       const [saved] = await Promise.all([api<Board>('/boards/finance'), catalog()]);
+      if (!alive) return;
+      if (dirty) {
+        message = '已显示本地草稿，请保存或放弃修改后重新读取。';
+        return;
+      }
       board = saved;
       baseline = JSON.stringify(saved.groups);
+      rememberBoard();
       try {
         const draft = JSON.parse(localStorage.getItem('insightra-market-board-draft') || 'null');
         if (draft?.revision === saved.revision && Array.isArray(draft.groups)) {
@@ -125,6 +148,14 @@
   }
   onMount(() => {
     alive = true;
+    const preview = cached<Preview>('finance');
+    if (preview?.board && Array.isArray(preview.definitions)) {
+      board = preview.board;
+      definitions = preview.definitions;
+      templates = preview.templates;
+      baseline = JSON.stringify(board.groups);
+      loading = false;
+    }
     coordinator = new WidgetRefreshCoordinator(
       (id, signal) => api<BoundDataset>(`/datasets/${id}`, { signal }),
       (next) => (states = next),
@@ -133,6 +164,7 @@
         return definition ? datasetProblem(data, definition) : '组件声明未加载。';
       },
     );
+    coordinator.configure(refreshConfigs);
     coordinator.start();
     const resume = () => coordinator?.tick();
     document.addEventListener('visibilitychange', resume);
@@ -171,6 +203,7 @@
         body: JSON.stringify({ revision: board.revision, groups: board.groups }),
       });
       baseline = JSON.stringify(board.groups);
+      rememberBoard();
       history = [];
       editing = false;
       message = '看板编组、位置和数据绑定已保存。';
@@ -256,6 +289,7 @@
   async function openLibrary(e?: MouseEvent, widget?: WidgetInstance, groupId?: string) {
     trigger = (e?.currentTarget as HTMLElement) ?? (document.activeElement as HTMLElement);
     library = true;
+    search = '';
     libraryTab = 'widgets';
     rebinding = widget?.id ?? '';
     chosen = widget?.kind ?? 'market-map';
@@ -482,6 +516,7 @@
                 (d) => d.kind === widget.kind,
               )}{#if definition}<div
                   class={`widget-placement size-${widget.size}`}
+                  style={`grid-row:span ${widgetHeight(widget) / 12 + 1};--card-height:${widgetHeight(widget)}px`}
                   data-widget={widget.id}
                   class:widget-drop-target={dropWidget === widget.id}
                   role="group"
@@ -554,9 +589,18 @@
             >已保存编组 <span>{templates.length}</span></button
           >{/if}
       </div>
-      {#if libraryTab === 'widgets'}<div class="widget-library-body">
+      {#if libraryTab === 'widgets'}<input
+          class="widget-search"
+          aria-label="搜索小组件"
+          placeholder="搜索组件名称或用途，如：自选、涨跌、指数"
+          bind:value={search}
+        />
+        {#if !matchingDefinitions.length}<p class="widget-search-empty">
+            没有匹配的小组件，试试其他关键词。
+          </p>{/if}
+        <div class="widget-library-body">
           <nav class="widget-kind-list">
-            {#each definitions.filter((d) => !rebinding || d.kind === chosen) as d}<button
+            {#each matchingDefinitions as d}<button
                 class:active={chosen === d.kind}
                 onclick={() => chooseKind(d.kind)}
                 ><span class={`widget-preview preview-${d.kind}`} aria-hidden="true"

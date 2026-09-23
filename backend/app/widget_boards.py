@@ -12,6 +12,8 @@ from .datasets import summary,timestamp,read_dataset
 router=APIRouter(prefix='/api')
 MARKET={'ts_code':'string','name':'string','industry':'string','trade_date':'string','pct_chg':'number','amount':'number'}
 WIDGETS=[
+ {'kind':'watchlist','name':'自选股观察','description':'按名称或代码搜索并添加关注公司，对比收盘价、涨跌与成交额。','slot':'market','required_fields':{**MARKET,'close':'number'},'optional_fields':{'open':'number','high':'number','low':'number','vol':'number','history':'array'},'default_size':'half','schema':'ashare.snapshot.v1'},
+ {'kind':'market-movers','name':'涨跌与成交排行','description':'全市场涨幅、跌幅、成交额榜，快速定位活跃个股。','slot':'market','required_fields':{**MARKET,'close':'number'},'optional_fields':{'open':'number','high':'number','low':'number','vol':'number','history':'array'},'default_size':'half','schema':'ashare.snapshot.v1'},
  {'kind':'market-map','name':'A 股大盘云图','description':'行业分区中的个股涨跌，面积可选择总市值或成交额。','slot':'market','required_fields':MARKET,'optional_fields':{'total_mv':'number'},'default_size':'wide','schema':'ashare.snapshot.v1'},
  {'kind':'market-breadth','name':'市场温度','description':'上涨、下跌、平盘与涨跌幅分布，观察市场广度。','slot':'market','required_fields':MARKET,'optional_fields':{},'default_size':'small','schema':'ashare.snapshot.v1'},
  {'kind':'industry-board','name':'细分行业观察','description':'行业等权涨跌、成交额与上涨家数，展开查看行业成分。','slot':'market','required_fields':MARKET,'optional_fields':{},'default_size':'half','schema':'ashare.snapshot.v1'},
@@ -42,12 +44,15 @@ def widget_catalog():
 
 class WidgetOptions(BaseModel):
     model_config=ConfigDict(extra='forbid')
+    height_units:Literal[2,3,4]|None=None
+    trend_days:Literal[5,10,20,60]|None=None
+    symbols:list[str]|None=Field(default=None,max_length=100)
     area:Literal['total_mv','amount']='total_mv'
 
 class Widget(BaseModel):
     model_config=ConfigDict(extra='forbid')
     id:str=Field(min_length=1,max_length=80)
-    kind:Literal['market-map','market-breadth','industry-board','index-board']
+    kind:Literal['market-map','market-breadth','industry-board','index-board','watchlist','market-movers']
     sources:dict[str,str]
     size:Literal['full','wide','half','small']='half'
     refresh_seconds:Literal[0,15,30,60,300,900,3600]=300
@@ -89,7 +94,7 @@ def save_board(body:BoardInput):
         revision=json.loads(old['value'])['revision'] if old else 0
         if revision!=body.revision:raise HTTPException(409,'看板已被其他页面修改，请重新读取后合并。')
         validate_groups(body.groups,db)
-        result={'revision':revision+1,'groups':[g.model_dump() for g in body.groups],'updated_at':timestamp()}
+        result={'revision':revision+1,'groups':[g.model_dump(exclude_none=True) for g in body.groups],'updated_at':timestamp()}
         db.execute("INSERT OR REPLACE INTO app_metadata VALUES ('board:finance',?)",(json.dumps(result,ensure_ascii=False),))
     return result
 
@@ -102,7 +107,7 @@ def templates():
 def save_template(body:Group):
     with closing(connect()) as db,db:
         validate_groups([body],db)
-        record={'id':str(uuid.uuid4()),'group':body.model_dump(),'created_at':timestamp()}
+        record={'id':str(uuid.uuid4()),'group':body.model_dump(exclude_none=True),'created_at':timestamp()}
         db.execute('INSERT INTO app_metadata VALUES (?,?)',('widget-template:'+record['id'],json.dumps(record,ensure_ascii=False)))
     return record
 
